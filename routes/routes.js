@@ -13,5 +13,8 @@ router.post('/users/addUser', usersControllers.addUser);
 router.get('/users/getAllActiveUsers', usersControllers.getAllActiveUsers);
 router.get('/users/getUserById/:params', usersControllers.getUserById);
 router.post('/users/signUp', usersControllers.SignUp);
+router.post('/users/login', usersControllers.login);
+router.post('/users/refreshToken', usersControllers.refreshToken);
+router.post('/users/logout', usersControllers.logout);
 
 module.exports = router;

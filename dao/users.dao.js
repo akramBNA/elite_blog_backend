@@ -214,7 +214,7 @@ class UsersDao {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   async refreshToken(req, res, next) {
     const { refreshToken } = req.body;
@@ -241,7 +241,7 @@ class UsersDao {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   async logout(req, res, next) {
     const { refreshToken } = req.body;
@@ -261,7 +261,7 @@ class UsersDao {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
 module.exports = UsersDao;
