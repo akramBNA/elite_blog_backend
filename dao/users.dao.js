@@ -124,6 +124,50 @@ class UsersDao {
     }
   };
 
+  async SignUp(req, res, next) {
+    try {
+      const { firstName, lastName, email, password } = req.body;
+
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.json({ success: false, message: 'Email already registered' });
+      }
+
+      const readerRole = await Role.findOne({ roleType: 'Reader', active: true });
+      if (!readerRole) {
+        return res.json({ success: false, message: 'Default role Reader not found' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = new User({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role: readerRole._id,
+        active: true
+      });
+
+      await newUser.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'User registered successfully',
+        data: {
+          _id: newUser._id,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          email: newUser.email,
+          role: 'Reader',
+          active: newUser.active,
+          createdAt: newUser.createdAt,
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = UsersDao;
