@@ -98,7 +98,7 @@ class UsersDao {
         let params = req.params.params;
         params = params && params.length ? JSON.parse(params) : {};
 
-        const userId = params.id || req.params.id;
+        const userId = params.user_id || req.params.user_id;
 
         const user = await User.findById(userId).populate('role').exec();
 
