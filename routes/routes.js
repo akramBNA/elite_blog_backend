@@ -11,5 +11,6 @@ router.post('/roles/addRole', rolesControllers.addRole);
 // USERS ROUTES
 router.post('/users/addUser', usersControllers.addUser);
 router.get('/users/getAllActiveUsers', usersControllers.getAllActiveUsers);
+router.get('/users/getUserById/:params', usersControllers.getUserById);
 
 module.exports = router;
