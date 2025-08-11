@@ -1,6 +1,8 @@
 const User = require('../models/users.model');
 const Role = require('../models/roles.model');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 
 class UsersDao {
   async addUser(req, res, next) {
