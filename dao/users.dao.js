@@ -172,12 +172,10 @@ class UsersDao {
   async login(req, res, next) {
     try {
       const { email, password } = req.body;
-
       const user = await User.findOne({ email: email.toLowerCase(), active: true }).populate('role');
       if (!user) {
         return res.json({ success: false, message: 'Invalid credentials' });
       }
-
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.json({ success: false, message: 'Invalid credentials' });
@@ -186,16 +184,16 @@ class UsersDao {
       const accessToken = jwt.sign(
         { userId: user._id, role: user.role.roleType },
         process.env.JWT_ACCESS_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
       );
 
       const refreshToken = jwt.sign(
         { userId: user._id },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
       );
 
-      user.refreshTokens = user.refreshTokens ? user.refreshTokens.concat(refreshToken) : [refreshToken];
+      user.refreshTokens = user.refreshTokens ? [...user.refreshTokens, refreshToken] : [refreshToken];
       await user.save();
 
       return res.status(200).json({
@@ -216,7 +214,54 @@ class UsersDao {
     } catch (error) {
       next(error);
     }
-  };
+  }
+
+  async refreshToken(req, res, next) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.json({ success: false, message: 'No refresh token provided' });
+    }
+    try {
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
+        if (err) return res.json({ success: false, message: 'Invalid refresh token' });
+
+        const user = await User.findById(decoded.userId).populate('role');
+        if (!user || !user.refreshTokens.includes(refreshToken)) {
+          return res.json({ success: false, message: 'Refresh token revoked' });
+        }
+
+        const newAccessToken = jwt.sign(
+          { userId: user._id, role: user.role.roleType },
+          process.env.JWT_ACCESS_SECRET,
+          { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+        );
+
+        return res.json({ success: true, accessToken: newAccessToken });
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req, res, next) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.json({ success: false, message: 'No refresh token provided' });
+    }
+    try {
+      const user = await User.findOne({ refreshTokens: refreshToken });
+      if (!user) {
+        return res.json({ success: false, message: 'Refresh token not found' });
+      }
+
+      user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+      await user.save();
+
+      return res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = UsersDao;
