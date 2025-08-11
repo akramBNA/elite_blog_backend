@@ -1,23 +1,52 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
 const User = require('../models/users.model');
+const Role = require('../models/roles.model');
+const bcrypt = require('bcryptjs');
 
-async function run() {
-  await mongoose.connect(process.env.MONGO_URI);
+class UsersDao {
+  async addUser(req, res, next) {
+    try {
+      const { firstName, lastName, email, password, roleType } = req.body;
 
-  const newUser = new User({
-    firstName: 'test_name',
-    lastName: 'test_lastname',
-    email: 'test@mail.com',
-    password: 'hashedpasswordhere',
-    role: 1, // Replace with a real Role ObjectId or create a Role first
-    active: true
-  });
+      if (!firstName || !lastName || !email || !password || !roleType) {
+        return res.json({ success: false, message: 'All fields are required.' });
+      }
 
-  await newUser.save();
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.json({ success: false, message: 'Email already in use.' });
+      }
 
-  console.log('User saved!');
-  mongoose.connection.close();
+      const role = await Role.findOne({ roleType: roleType.trim() });
+      if (!role) {
+        return res.json({ success: false, message: `Role "${roleType}" not found.` });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newUser = new User({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role: role._id,
+      });
+
+      await newUser.save();
+
+      const userResponse = {
+        _id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: role.roleType,
+        active: newUser.active,
+      };
+
+      res.status(200).json({ success: true, data: userResponse });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
-run().catch(console.error);
+module.exports = UsersDao;
