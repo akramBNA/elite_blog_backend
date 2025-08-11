@@ -93,6 +93,37 @@ class UsersDao {
     }
   };
 
+  async getUserById(req, res, next) {
+    try {
+        let params = req.params.params;
+        params = params && params.length ? JSON.parse(params) : {};
+
+        const userId = params.id || req.params.id;
+
+        const user = await User.findById(userId).populate('role').exec();
+
+        if (!user || !user.active) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                _id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                role: user.role ? user.role.roleType : null,
+                active: user.active,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+  };
+
 }
 
 module.exports = UsersDao;
