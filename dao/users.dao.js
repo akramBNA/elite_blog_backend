@@ -1,6 +1,8 @@
 const User = require('../models/users.model');
 const Role = require('../models/roles.model');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 
 class UsersDao {
   async addUser(req, res, next) {
@@ -126,44 +128,158 @@ class UsersDao {
 
   async SignUp(req, res, next) {
     try {
-      const { firstName, lastName, email, password } = req.body;
+        const { firstName, lastName, email, password } = req.body;
 
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
         return res.json({ success: false, message: 'Email already registered' });
-      }
+        }
 
-      const readerRole = await Role.findOne({ roleType: 'Reader', active: true });
-      if (!readerRole) {
+        const readerRole = await Role.findOne({ roleType: 'Reader', active: true });
+        if (!readerRole) {
         return res.json({ success: false, message: 'Default role Reader not found' });
-      }
+        }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-      const newUser = new User({
+        const newUser = new User({
         firstName,
         lastName,
         email,
         password: hashedPassword,
         role: readerRole._id,
-        active: true
-      });
+        active: true,
+        refreshTokens: []
+        });
 
-      await newUser.save();
+        await newUser.save();
+
+        const accessToken = jwt.sign(
+        { userId: newUser._id, role: 'Reader' },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+        );
+
+        const refreshToken = jwt.sign(
+        { userId: newUser._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+        );
+
+        newUser.refreshTokens = [refreshToken];
+        await newUser.save();
+
+        return res.status(200).json({
+        success: true,
+        message: 'User registered and logged in successfully',
+        data: {
+            accessToken,
+            refreshToken,
+            user: {
+            _id: newUser._id,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            email: newUser.email,
+            role: 'Reader',
+            active: newUser.active,
+            createdAt: newUser.createdAt,
+            }
+        }
+        });
+    } catch (error) {
+        next(error);
+    }
+  };
+
+  async login(req, res, next) {
+    try {
+      const { email, password } = req.body;
+      const user = await User.findOne({ email: email.toLowerCase(), active: true }).populate('role');
+      if (!user) {
+        return res.json({ success: false, message: 'Invalid credentials' });
+      }
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const accessToken = jwt.sign(
+        { userId: user._id, role: user.role.roleType },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+      );
+
+      user.refreshTokens = user.refreshTokens ? [...user.refreshTokens, refreshToken] : [refreshToken];
+      await user.save();
 
       return res.status(200).json({
         success: true,
-        message: 'User registered successfully',
+        message: 'Login successful',
         data: {
-          _id: newUser._id,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          email: newUser.email,
-          role: 'Reader',
-          active: newUser.active,
-          createdAt: newUser.createdAt,
+          accessToken,
+          refreshToken,
+          user: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role.roleType,
+          }
         }
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  async refreshToken(req, res, next) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.json({ success: false, message: 'No refresh token provided' });
+    }
+    try {
+      jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
+        if (err) return res.json({ success: false, message: 'Invalid refresh token' });
+
+        const user = await User.findById(decoded.userId).populate('role');
+        if (!user || !user.refreshTokens.includes(refreshToken)) {
+          return res.json({ success: false, message: 'Refresh token revoked' });
+        }
+
+        const newAccessToken = jwt.sign(
+          { userId: user._id, role: user.role.roleType },
+          process.env.JWT_ACCESS_SECRET,
+          { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+        );
+
+        return res.json({ success: true, accessToken: newAccessToken });
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  async logout(req, res, next) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.json({ success: false, message: 'No refresh token provided' });
+    }
+    try {
+      const user = await User.findOne({ refreshTokens: refreshToken });
+      if (!user) {
+        return res.json({ success: false, message: 'Refresh token not found' });
+      }
+
+      user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+      await user.save();
+
+      return res.json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
       next(error);
     }
