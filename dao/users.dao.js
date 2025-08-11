@@ -168,6 +168,55 @@ class UsersDao {
       next(error);
     }
   };
+
+  async login(req, res, next) {
+    try {
+      const { email, password } = req.body;
+
+      const user = await User.findOne({ email: email.toLowerCase(), active: true }).populate('role');
+      if (!user) {
+        return res.json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const accessToken = jwt.sign(
+        { userId: user._id, role: user.role.roleType },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: '15m' }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      user.refreshTokens = user.refreshTokens ? user.refreshTokens.concat(refreshToken) : [refreshToken];
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          accessToken,
+          refreshToken,
+          user: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role.roleType,
+          }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = UsersDao;
