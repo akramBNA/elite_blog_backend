@@ -46,7 +46,53 @@ class UsersDao {
     } catch (error) {
       next(error);
     }
-  }
+  };
+
+  async getAllActiveUsers(req, res, next) {
+    try {
+        const keyword = req.query.keyword ? req.query.keyword.trim() : '';
+        const limit = parseInt(req.query.limit) || 20;
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+
+        let filter = { active: true };
+        if (keyword) {
+        filter.$or = [
+            { firstName: { $regex: keyword, $options: 'i' } },
+            { lastName: { $regex: keyword, $options: 'i' } }
+        ];
+        }
+
+        const total = await User.countDocuments(filter);
+
+        const users = await User.find(filter).populate('role').sort({ lastName: 1, firstName: 1 }).skip(skip).limit(limit).exec();
+
+        const usersResponse = users.map(user => ({
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role ? user.role.roleType : null,
+            active: user.active,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt
+        }));
+
+        return res.status(200).json({
+        success: true,
+        data: usersResponse,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        }
+        });
+    } catch (error) {
+        next(error);
+    }
+  };
+
 }
 
 module.exports = UsersDao;
