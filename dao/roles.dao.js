@@ -1,4 +1,4 @@
-const Role = require('../models/role');
+const Role = require('../models/roles.model');
 
 class RolesDao {
   async getAllRoles(req, res, next) {
