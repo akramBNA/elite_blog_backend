@@ -25,38 +25,48 @@ class PostsDao {
     } catch (error) {
       return next(error);
     }
-  }
+  };
 
   async getAllPosts(req, res, next) {
     try {
-      const posts = await Post.find().populate("author", "firstName lastName").sort({ createdAt: -1 });
+        const posts = await Post.find()
+        .populate('author', 'firstName lastName')
+        .populate({
+            path: 'comments.author',
+            select: 'firstName lastName'
+        }).sort({ createdAt: -1 });
 
-      const formattedPosts = posts.map((post) => ({
+        const formattedPosts = posts.map(post => ({
         _id: post._id,
         title: post.title,
         content: post.content,
         tags: post.tags,
         image: post.image,
-        author: post.author
-          ? {
-              _id: post.author._id,
-              firstName: post.author.firstName,
-              lastName: post.author.lastName,
-            }
-          : null,
+        author: post.author ? {
+            _id: post.author._id,
+            firstName: post.author.firstName,
+            lastName: post.author.lastName,
+        } : null,
+        comments: post.comments.map(comment => ({
+            _id: comment._id,
+            content: comment.content,
+            createdAt: comment.createdAt,
+            author: comment.author ? {
+            _id: comment.author._id,
+            firstName: comment.author.firstName,
+            lastName: comment.author.lastName,
+            } : null,
+        })),
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
-      }));
+        }));
 
-      res.status(200).json({
-        success: true,
-        data: formattedPosts,
-      });
-      
+        res.status(200).json({ success: true, data: formattedPosts });
     } catch (error) {
-      return next(error);
+       return next(error);
     }
-  }
+  };
+
 }
 
 module.exports = PostsDao;
