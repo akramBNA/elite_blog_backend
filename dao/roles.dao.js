@@ -33,6 +33,9 @@ class RolesDao {
 
   async updateRole(req, res, next) {
     try {
+      let params = req.params.params;
+      params = params && params.length ? JSON.parse(params) : {};
+
       const userId = req.params.id;
       const { roleType } = req.body;
 
