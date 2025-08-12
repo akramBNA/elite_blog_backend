@@ -8,6 +8,7 @@ const usersControllers = require('../controllers/users.controllers');
 // ROLES ROUTES
 router.get('/roles/getAllRoles', authenticateToken, rolesControllers.getAllRoles);
 router.post('/roles/addRole', authenticateToken, rolesControllers.addRole);
+router.put('/roles/updateRole', authenticateToken, rolesControllers.updateRole)
 
 // USERS ROUTES
 router.post('/users/addUser', usersControllers.addUser);

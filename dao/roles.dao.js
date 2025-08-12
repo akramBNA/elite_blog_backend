@@ -68,7 +68,7 @@ class RolesDao {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
 }
 
