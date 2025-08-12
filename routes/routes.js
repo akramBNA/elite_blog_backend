@@ -8,10 +8,12 @@ const usersControllers = require('../controllers/users.controllers');
 // ROLES ROUTES
 router.get('/roles/getAllRoles', authenticateToken, rolesControllers.getAllRoles);
 router.post('/roles/addRole', authenticateToken, rolesControllers.addRole);
+router.put('/roles/updateRole', authenticateToken, rolesControllers.updateRole)
 
 // USERS ROUTES
 router.post('/users/addUser', usersControllers.addUser);
 router.get('/users/getAllActiveUsers', authenticateToken, usersControllers.getAllActiveUsers);
+router.get('/users/getUserStats', authenticateToken, usersControllers.getUserStats);
 router.get('/users/getUserById/:params', authenticateToken, usersControllers.getUserById);
 router.post('/users/signUp', usersControllers.SignUp);
 router.post('/users/login', usersControllers.login);

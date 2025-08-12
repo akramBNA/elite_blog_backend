@@ -52,48 +52,94 @@ class UsersDao {
 
   async getAllActiveUsers(req, res, next) {
     try {
-        const keyword = req.query.keyword ? req.query.keyword.trim() : '';
-        const limit = parseInt(req.query.limit) || 20;
-        const page = parseInt(req.query.page) || 1;
-        const skip = (page - 1) * limit;
+      const keyword = req.query.keyword ? req.query.keyword.trim() : '';
+      const limit = parseInt(req.query.limit) || 20;
+      const page = parseInt(req.query.page) || 1;
+      const skip = (page - 1) * limit;
 
-        let filter = { active: true };
-        if (keyword) {
-        filter.$or = [
-            { firstName: { $regex: keyword, $options: 'i' } },
-            { lastName: { $regex: keyword, $options: 'i' } }
-        ];
-        }
+      let filter = { active: true };
+      if (keyword) {
+        filter.firstName = { $regex: '^' + keyword, $options: 'i' };
+      }
 
-        const total = await User.countDocuments(filter);
+      const total = await User.countDocuments(filter);
 
-        const users = await User.find(filter).populate('role').sort({ lastName: 1, firstName: 1 }).skip(skip).limit(limit).exec();
+      const users = await User.find(filter).populate('role').sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
 
-        const usersResponse = users.map(user => ({
-            _id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role ? user.role.roleType : null,
-            active: user.active,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt
-        }));
+      const usersResponse = users.map(user => ({
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role ? user.role.roleType : null,
+        active: user.active,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }));
 
-        return res.status(200).json({
+      return res.status(200).json({
         success: true,
         data: usersResponse,
         meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
         }
-        });
+      });
     } catch (error) {
-        next(error);
+      next(error);
     }
   };
+
+  async getUserStats(req, res, next) {
+    try {
+      const filter = { active: true };
+
+      const total_users = await User.countDocuments(filter);
+
+      const roleCounts = await User.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'roles',
+            localField: 'role',
+            foreignField: '_id',
+            as: 'role'
+          }
+        },
+        { $unwind: '$role' },
+        {
+          $group: {
+            _id: '$role.roleType',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const counts = {
+        total_users,
+        admin_count: 0,
+        editor_count: 0,
+        writer_count: 0,
+        reader_count: 0,
+      };
+
+      roleCounts.forEach(rc => {
+        const role = rc._id.toLowerCase();
+        if (counts.hasOwnProperty(`${role}_count`)) {
+          counts[`${role}_count`] = rc.count;
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: counts
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   async getUserById(req, res, next) {
     try {
