@@ -3,6 +3,7 @@ const router = express.Router();
 const authenticateToken = require('../middlewares/authentication.middlewares');
 const rolesControllers = require('../controllers/roles.controllers');
 const usersControllers = require('../controllers/users.controllers');
+const postsControllers = require('../controllers/posts.controllers');
 
 
 // ROLES ROUTES
@@ -19,5 +20,8 @@ router.post('/users/signUp', usersControllers.SignUp);
 router.post('/users/login', usersControllers.login);
 router.post('/users/refreshToken', usersControllers.refreshToken);
 router.post('/users/logout', authenticateToken, usersControllers.logout);
+
+// POSTS ROUTES
+router.post('/posts/createPost', authenticateToken, postsControllers.createPost);
 
 module.exports = router;
