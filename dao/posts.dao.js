@@ -3,7 +3,7 @@ const User = require('../models/users.model');
 
 class PostsDao {
 
-  async createPost(req, res) {
+  async createPost(req, res, next) {
     try {
         const { title, content, tags, image, author } = req.body;
 
@@ -25,11 +25,7 @@ class PostsDao {
         });
 
     } catch (error) {
-        return res.json({
-        success: false,
-        message: "Error creating post",
-        error: error.message,
-        });
+        return next(error);
     }
   }
 }
