@@ -23,6 +23,6 @@ router.post('/users/logout', authenticateToken, usersControllers.logout);
 
 // POSTS ROUTES
 router.post('/posts/createPost', authenticateToken, postsControllers.createPost);
-router.get('/posts/createPost', authenticateToken, postsControllers.getAllPosts);
+router.get('/posts/getAllPosts', authenticateToken, postsControllers.getAllPosts);
 
 module.exports = router;
