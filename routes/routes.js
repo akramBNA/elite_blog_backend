@@ -12,6 +12,7 @@ router.post('/roles/addRole', authenticateToken, rolesControllers.addRole);
 // USERS ROUTES
 router.post('/users/addUser', usersControllers.addUser);
 router.get('/users/getAllActiveUsers', authenticateToken, usersControllers.getAllActiveUsers);
+router.get('/users/getUserStats', authenticateToken, usersControllers.getUserStats);
 router.get('/users/getUserById/:params', authenticateToken, usersControllers.getUserById);
 router.post('/users/signUp', usersControllers.SignUp);
 router.post('/users/login', usersControllers.login);
