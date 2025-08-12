@@ -40,7 +40,7 @@ class RolesDao {
       const { roleType } = req.body;
 
       if (!roleType) {
-        return res.status(400).json({ success: false, message: 'Role type is required.' });
+        return res.json({ success: false, message: 'Role type is required.' });
       }
 
       const role = await Role.findOne({ roleType: roleType.trim(), active: true });
