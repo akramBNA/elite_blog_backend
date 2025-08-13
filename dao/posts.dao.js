@@ -122,6 +122,34 @@ class PostsDao {
     }
   };
 
+  async updatePost(req, res, next) {
+    try {
+      const { postId } = req.params;
+      const { title, content, tags, image } = req.body;
+
+      const post = await Post.findById(postId);
+      if (!post || !post.active) {
+        return res.json({ success: false, message: 'Post not found or inactive' });
+      }
+
+      if (title !== undefined) post.title = title;
+      if (content !== undefined) post.content = content;
+      if (tags !== undefined) post.tags = tags;
+      if (image !== undefined) post.image = image;
+
+      const updatedPost = await post.save();
+
+      return res.status(200).json({
+        success: true,
+        data: updatedPost,
+        message: 'Post updated successfully'
+      });
+
+    } catch (error) {
+      return next(error);
+    }
+  };
+
 }
 
 module.exports = PostsDao;
