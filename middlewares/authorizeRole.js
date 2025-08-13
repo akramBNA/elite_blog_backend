@@ -1,0 +1,14 @@
+function authorizeRole(...allowedRoles) {
+  return (req, res, next) => {
+    const userRole = req.user.role;
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission.'
+      });
+    }
+    next();
+  };
+}
+
+module.exports = authorizeRole;

@@ -6,7 +6,8 @@ const postSchema = new mongoose.Schema(
     content: { type: String, required: true },
     tags: [{ type: String, trim: true }],
     image: { type: String },
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    active: { type: Boolean, default: true }
   },
   {
     timestamps: true,
