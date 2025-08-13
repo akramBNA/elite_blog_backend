@@ -2,6 +2,8 @@
 
 * This is the backend file for the elite blog web application. It is connected to a **MongoDB** database and provides REST APIs for the frontend.
 
+---
+
 ## Installation & Setup
 
 1. Set up environment variables for:
@@ -13,7 +15,10 @@
    npm install
 
 3. Run the server:
-  - npm start
+  ```bash
+   npm start
+
+---
 
 ## It is mandatory to set up an admin using postman or an api testing tool:
 
@@ -28,11 +33,15 @@
   - "roleType": "Admin" --> it is important to signup as admin in the first place to be able to access full features of the app and changes other users roles.
 - }
 
+---
+
 ## Architecture:
 
 * use of MVC architecture.
 
 * Model -> DAO -> Controllers -> Routes -> server.js
+
+---
 
 ## Frontend Repo:
 
