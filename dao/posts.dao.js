@@ -138,7 +138,7 @@ class PostsDao {
       if (image !== undefined) post.image = image;
 
       const updatedPost = await post.save();
-
+      
       return res.status(200).json({
         success: true,
         data: updatedPost,
