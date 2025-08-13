@@ -32,5 +32,6 @@ router.put('/posts/updatePost/:id', authenticateToken, authorizeRole('Admin', 'E
 
 // COMMENTS ROUTES
 router.post('/comments/createComment', authenticateToken, commentsControllers.createComment);
+router.post('/comments/addReply', authenticateToken, commentsControllers.addReply);
 
 module.exports = router;
