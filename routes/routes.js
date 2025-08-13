@@ -24,7 +24,7 @@ router.post('/users/refreshToken', usersControllers.refreshToken);
 router.post('/users/logout', authenticateToken, usersControllers.logout);
 
 // POSTS ROUTES
-router.post('/posts/createPost', authenticateToken, postsControllers.createPost);
+router.post('/posts/createPost', authenticateToken, authorizeRole('Admin', 'Editor', 'Writer'), postsControllers.createPost);
 router.get('/posts/getAllPosts', authenticateToken, postsControllers.getAllPosts);
 router.put('/posts/deletePost/:id', authenticateToken, authorizeRole('Admin'), postsControllers.deletePost);
 router.put('/posts/updatePost/:id', authenticateToken, authorizeRole('Admin', 'Editor', 'Writer'), postsControllers.updatePost);
