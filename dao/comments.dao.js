@@ -38,36 +38,41 @@ class CommentsDao {
   };
 
   async addReply(req, res, next) {
-    try {
+     try {
       const { commentId, userId, content } = req.body;
 
       if (!commentId || !userId || !content) {
-        return res.json({ success: false, message: "commentId, userId, and content are required." });
+        return res.json({ success: false, message: "commentId, userId and content are required." });
       }
 
-      const comment = await Comment.findById(commentId);
-      if (!comment) {
-        return res.json({ success: false, message: "Comment not found." });
+      const parentComment = await Comment.findById(commentId);
+      if (!parentComment || !parentComment.active) {
+        return res.json({ success: false, message: "Comment not found or inactive." });
       }
 
       const user = await User.findById(userId);
-      if (!user) {
-        return res.json({ success: false, message: "User not found." });
-      }
+      if (!user) return res.json({ success: false, message: "User not found." });
 
-      const newReply = {
+      const newReply = new Comment({
         content: content.trim(),
-        author: userId
-      };
+        author: userId,
+        post: parentComment.post
+      });
 
-      comment.replies.push(newReply);
-      await comment.save();
+      await newReply.save();
 
-      const updatedComment = await Comment.findById(commentId)
-        .populate('author', 'firstName lastName')
-        .populate('replies.author', 'firstName lastName');
+      parentComment.replies.push(newReply._id);
+      await parentComment.save();
 
-      return res.status(200).json({ success: true, data: updatedComment });
+      const populatedComment = await Comment.findById(commentId)
+        .populate('author', 'firstName lastName email')
+        .populate({
+          path: 'replies',
+          populate: { path: 'author', select: 'firstName lastName' }
+        });
+
+      return res.status(200).json({ success: true, data: populatedComment });
+
     } catch (error) {
       next(error);
     }

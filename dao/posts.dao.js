@@ -44,8 +44,13 @@ class PostsDao {
 
         const postIds = posts.map(post => post._id);
 
-        const comments = await Comment.find({ post: { $in: postIds }, active: true })
+        const comments = await Comment.find({ post: { $in: postIds }, active: true, replyTo: { $exists: false } })
         .populate('author', 'firstName lastName')
+        .populate({
+          path: 'replies',
+          match: { active: true },
+          populate: { path: 'author', select: 'firstName lastName' }
+        })
         .sort({ createdAt: 1 });
 
         const commentsByPostId = comments.reduce((acc, comment) => {
