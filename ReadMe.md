@@ -22,9 +22,9 @@
 
 * route (POST) : http://localhost:5000/api/users/addUser (or whatever your port is).
 
-* body :
-```bash
-    {
+* 
+```
+   body : {
     "firstName": "Your_name",
     "lastName": "your_last_name",
     "email": "your_email@mail.com",
