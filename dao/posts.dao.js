@@ -124,7 +124,7 @@ class PostsDao {
 
   async updatePost(req, res, next) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.id;
       const { title, content, tags, image } = req.body;
 
       const post = await Post.findById(postId);
