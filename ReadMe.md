@@ -18,22 +18,20 @@
   ```bash
    npm start
 
----
-
 ## It is mandatory to set up an admin using postman or an api testing tool:
 
 * route (POST) : http://localhost:5000/api/users/addUser (or whatever your port is).
 
-* body : 
-- {
-  - "firstName": "Your_name",
-  - "lastName": "your_last_name",
-  - "email": "your_email@mail.com",
-  - "password": "your_password", // must be at least 6 chars
-  - "roleType": "Admin" --> it is important to signup as admin in the first place to be able to access full features of the app and changes other users roles.
-- }
-
----
+* body :
+```bash
+    {
+    "firstName": "Your_name",
+    "lastName": "your_last_name",
+    "email": "your_email@mail.com",
+    "password": "your_password", // must be at least 6 chars
+    "roleType": "Admin"  ---> it is important to signup as admin in the first place to be able to access full features of the app and changes other users roles.
+    }
+```
 
 ## Architecture:
 
