@@ -98,6 +98,30 @@ class PostsDao {
     }
   };
 
+  async deletePost(req, res, next) {
+    try {
+      const { postId } = req.params;
+
+      const post = await Post.findById(postId);
+      if (!post) {
+        return res.json({ success: false, message: 'Post not found' });
+      }
+
+      await Promise.all([
+        Comment.deleteMany({ post: postId }),
+        Post.findByIdAndDelete(postId)
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Post and associated comments deleted successfully'
+      });
+
+    } catch (error) {
+      return next(error);
+    }
+  };
+
 }
 
 module.exports = PostsDao;
