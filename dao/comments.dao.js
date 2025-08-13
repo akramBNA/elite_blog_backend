@@ -38,7 +38,7 @@ class CommentsDao {
   };
 
   async addReply(req, res, next) {
-     try {
+    try {
       const { commentId, userId, content } = req.body;
 
       if (!commentId || !userId || !content) {
@@ -56,7 +56,8 @@ class CommentsDao {
       const newReply = new Comment({
         content: content.trim(),
         author: userId,
-        post: parentComment.post
+        post: parentComment.post,
+        replyTo: parentComment._id
       });
 
       await newReply.save();
@@ -64,15 +65,14 @@ class CommentsDao {
       parentComment.replies.push(newReply._id);
       await parentComment.save();
 
-      const populatedComment = await Comment.findById(commentId)
-        .populate('author', 'firstName lastName email')
+      const populatedComment = await Comment.findById(parentComment._id)
+        .populate('author', 'firstName lastName')
         .populate({
           path: 'replies',
           populate: { path: 'author', select: 'firstName lastName' }
         });
 
       return res.status(200).json({ success: true, data: populatedComment });
-
     } catch (error) {
       next(error);
     }
