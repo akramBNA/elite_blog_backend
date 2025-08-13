@@ -34,9 +34,9 @@ class PostsDao {
         let limit = parseInt(req.query.limit) || 20;
         let skip = (page - 1) * limit;
 
-        const totalPosts = await Post.countDocuments();
+        const totalPosts = await Post.countDocuments({ active: true });
 
-        const posts = await Post.find()
+        const posts = await Post.find({ active: true })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
