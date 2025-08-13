@@ -103,18 +103,18 @@ class PostsDao {
       const { postId } = req.params;
 
       const post = await Post.findById(postId);
-      if (!post) {
-        return res.json({ success: false, message: 'Post not found' });
+      if (!post || !post.active) {
+        return res.json({ success: false, message: 'Post not found or already inactive' });
       }
 
       await Promise.all([
-        Comment.deleteMany({ post: postId }),
-        Post.findByIdAndDelete(postId)
+        Post.findByIdAndUpdate(postId, { active: false }),
+        Comment.updateMany({ post: postId }, { active: false })
       ]);
 
       return res.status(200).json({
         success: true,
-        message: 'Post and associated comments deleted successfully'
+        message: 'Post and associated comments have been deactivated successfully'
       });
 
     } catch (error) {
