@@ -17,6 +17,7 @@
 3. Run the server:
   ```bash
    npm start
+   ```
 
 ## It is mandatory to set up an admin using postman or an api testing tool:
 
