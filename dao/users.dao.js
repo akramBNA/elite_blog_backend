@@ -181,8 +181,8 @@ class UsersDao {
         return res.json({ success: false, message: 'Email already registered' });
         }
 
-        const readerRole = await Role.findOne({ roleType: 'Reader', active: true });
-        if (!readerRole) {
+        const writerRole = await Role.findOne({ roleType: 'Writer', active: true });
+        if (!writerRole) {
         return res.json({ success: false, message: 'Default role Reader not found' });
         }
 
@@ -193,7 +193,7 @@ class UsersDao {
         lastName,
         email,
         password: hashedPassword,
-        role: readerRole._id,
+        role: writerRole._id,
         active: true,
         refreshTokens: []
         });
@@ -201,7 +201,7 @@ class UsersDao {
         await newUser.save();
 
         const accessToken = jwt.sign(
-        { userId: newUser._id, role: 'Reader' },
+        { userId: newUser._id, role: writerRole.roleType },
         process.env.JWT_ACCESS_SECRET,
         { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
         );
@@ -226,7 +226,7 @@ class UsersDao {
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             email: newUser.email,
-            role: 'Reader',
+            role: writerRole.roleType,
             active: newUser.active,
             createdAt: newUser.createdAt,
             }
