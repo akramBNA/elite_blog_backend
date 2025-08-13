@@ -32,16 +32,12 @@ class CommentsDao {
 
       const populatedComment = await Comment.findById(newComment._id).populate('author', 'firstName lastName email');
 
-      if (post.author._id.toString() !== userId) {
-        const io = getIO();
-        io.to(post.author._id.toString()).emit("new-comment", {
-          type: "comment",
-          postId: post._id,
-          postTitle: post.title,
-          comment: populatedComment,
-          fromUser: { _id: user._id, firstName: user.firstName, lastName: user.lastName }
-        });
-      }
+      const io = getIO();
+      io.to(post.author.toString()).emit('commentNotification', {
+        message: `${user.firstName} commented on your post "${post.title}"`,
+        postId: post._id,
+        commentId: newComment._id,
+      });
 
       return res.status(200).json({ success: true, data: populatedComment });
     } catch (error) {
@@ -84,14 +80,13 @@ class CommentsDao {
           populate: { path: 'author', select: 'firstName lastName' }
         });
 
-      if (parentComment.author._id.toString() !== userId) {
-        const io = getIO();
-        io.to(parentComment.author._id.toString()).emit("new-comment", {
-          type: "reply",
+      const io = getIO();
+      const parentCommentAuthorId = parentComment.author.toString();
+      if (parentCommentAuthorId !== userId) {
+        io.to(parentCommentAuthorId).emit('replyNotification', {
+          message: `${user.firstName} replied to your comment`,
           postId: parentComment.post,
-          commentId: parentComment._id,
-          reply: populatedComment.replies[populatedComment.replies.length - 1],
-          fromUser: { _id: user._id, firstName: user.firstName, lastName: user.lastName }
+          commentId: newReply._id,
         });
       }
 
