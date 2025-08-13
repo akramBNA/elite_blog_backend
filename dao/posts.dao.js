@@ -30,76 +30,97 @@ class PostsDao {
 
   async getAllPosts(req, res, next) {
     try {
-        let page = parseInt(req.query.page) || 1;
-        let limit = parseInt(req.query.limit) || 20;
-        let skip = (page - 1) * limit;
+      let page = parseInt(req.query.page) || 1;
+      let limit = parseInt(req.query.limit) || 20;
+      let skip = (page - 1) * limit;
 
-        const totalPosts = await Post.countDocuments({ active: true });
+      const totalPosts = await Post.countDocuments({ active: true });
 
-        const posts = await Post.find({ active: true })
+      const posts = await Post.find({ active: true })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate("author", "firstName lastName");
 
-        const postIds = posts.map(post => post._id);
+      const postIds = posts.map(post => post._id);
 
-        const comments = await Comment.find({ post: { $in: postIds }, active: true, replyTo: { $exists: false } })
+      const comments = await Comment.find({ post: { $in: postIds }, active: true })
         .populate('author', 'firstName lastName')
-        .populate({
-          path: 'replies',
-          match: { active: true },
-          populate: { path: 'author', select: 'firstName lastName' }
-        })
         .sort({ createdAt: 1 });
 
-        const commentsByPostId = comments.reduce((acc, comment) => {
-        acc[comment.post] = acc[comment.post] || [];
-        acc[comment.post].push({
+      const commentsByPostId = {};
+
+      comments.forEach(comment => {
+        if (!comment.replyTo) {
+          commentsByPostId[comment.post] = commentsByPostId[comment.post] || [];
+          commentsByPostId[comment.post].push({
             _id: comment._id,
             content: comment.content,
             author: comment.author
-            ? {
-                _id: comment.author._id,
-                firstName: comment.author.firstName,
-                lastName: comment.author.lastName,
+              ? {
+                  _id: comment.author._id,
+                  firstName: comment.author.firstName,
+                  lastName: comment.author.lastName
                 }
-            : null,
+              : null,
             createdAt: comment.createdAt,
-        });
-        return acc;
-        }, {});
+            replies: []
+          });
+        }
+      });
 
-        const formattedPosts = posts.map(post => ({
+      comments.forEach(comment => {
+        if (comment.replyTo) {
+          const parent = commentsByPostId[comment.post]?.find(
+            c => c._id.toString() === comment.replyTo.toString()
+          );
+          if (parent) {
+            parent.replies.push({
+              _id: comment._id,
+              content: comment.content,
+              author: comment.author
+                ? {
+                    _id: comment.author._id,
+                    firstName: comment.author.firstName,
+                    lastName: comment.author.lastName
+                  }
+                : null,
+              createdAt: comment.createdAt
+            });
+          }
+        }
+      });
+
+      const formattedPosts = posts.map(post => ({
         _id: post._id,
         title: post.title,
         content: post.content,
         tags: post.tags,
         image: post.image,
         author: post.author
-            ? {
-                _id: post.author._id,
-                firstName: post.author.firstName,
-                lastName: post.author.lastName,
+          ? {
+              _id: post.author._id,
+              firstName: post.author.firstName,
+              lastName: post.author.lastName
             }
-            : null,
+          : null,
         comments: commentsByPostId[post._id] || [],
         createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
-        }));
+        updatedAt: post.updatedAt
+      }));
 
-        res.status(200).json({
+      res.status(200).json({
         success: true,
         data: formattedPosts,
         meta: {
-            total: totalPosts,
-            page,
-            limit,
-            totalPages: Math.ceil(totalPosts / limit),
-        },
-        });
+          total: totalPosts,
+          page,
+          limit,
+          totalPages: Math.ceil(totalPosts / limit)
+        }
+      });
     } catch (error) {
-        return next(error);
+      return next(error);
     }
   };
 

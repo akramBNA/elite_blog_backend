@@ -11,6 +11,7 @@ const commentSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', required: true },
   replies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }],
+  replyTo: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', default: null },
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 
