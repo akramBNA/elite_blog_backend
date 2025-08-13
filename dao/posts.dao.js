@@ -100,7 +100,7 @@ class PostsDao {
 
   async deletePost(req, res, next) {
     try {
-      const { postId } = req.params;
+      const postId = req.params.id;
 
       const post = await Post.findById(postId);
       if (!post || !post.active) {
