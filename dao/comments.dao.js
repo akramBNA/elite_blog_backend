@@ -1,6 +1,7 @@
 const Post = require("../models/posts.model");
 const User = require("../models/users.model");
 const Comment = require("../models/comments.model");
+const { getIO } = require("../socket");
 
 class CommentsDao {
   async createComment(req, res, next) {
@@ -30,6 +31,17 @@ class CommentsDao {
       await newComment.save();
 
       const populatedComment = await Comment.findById(newComment._id).populate('author', 'firstName lastName email');
+
+      if (post.author._id.toString() !== userId) {
+        const io = getIO();
+        io.to(post.author._id.toString()).emit("new-comment", {
+          type: "comment",
+          postId: post._id,
+          postTitle: post.title,
+          comment: populatedComment,
+          fromUser: { _id: user._id, firstName: user.firstName, lastName: user.lastName }
+        });
+      }
 
       return res.status(200).json({ success: true, data: populatedComment });
     } catch (error) {
@@ -71,6 +83,17 @@ class CommentsDao {
           path: 'replies',
           populate: { path: 'author', select: 'firstName lastName' }
         });
+
+      if (parentComment.author._id.toString() !== userId) {
+        const io = getIO();
+        io.to(parentComment.author._id.toString()).emit("new-comment", {
+          type: "reply",
+          postId: parentComment.post,
+          commentId: parentComment._id,
+          reply: populatedComment.replies[populatedComment.replies.length - 1],
+          fromUser: { _id: user._id, firstName: user.firstName, lastName: user.lastName }
+        });
+      }
 
       return res.status(200).json({ success: true, data: populatedComment });
     } catch (error) {
