@@ -26,6 +26,8 @@ router.post('/users/logout', authenticateToken, usersControllers.logout);
 router.post('/posts/createPost', authenticateToken, postsControllers.createPost);
 router.get('/posts/getAllPosts', authenticateToken, postsControllers.getAllPosts);
 router.put('/posts/deletePost/:id', authenticateToken, postsControllers.deletePost);
+router.put('/posts/updatePost/:id', authenticateToken, postsControllers.updatePost);
+
 
 // COMMENTS ROUTES
 router.post('/comments/createComment', authenticateToken, commentsControllers.createComment);
