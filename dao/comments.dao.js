@@ -36,6 +36,43 @@ class CommentsDao {
       next(error);
     }
   };
+
+  async addReply(req, res, next) {
+    try {
+      const { commentId, userId, content } = req.body;
+
+      if (!commentId || !userId || !content) {
+        return res.json({ success: false, message: "commentId, userId, and content are required." });
+      }
+
+      const comment = await Comment.findById(commentId);
+      if (!comment) {
+        return res.json({ success: false, message: "Comment not found." });
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.json({ success: false, message: "User not found." });
+      }
+
+      const newReply = {
+        content: content.trim(),
+        author: userId
+      };
+
+      comment.replies.push(newReply);
+      await comment.save();
+
+      const updatedComment = await Comment.findById(commentId)
+        .populate('author', 'firstName lastName')
+        .populate('replies.author', 'firstName lastName');
+
+      return res.status(200).json({ success: true, data: updatedComment });
+    } catch (error) {
+      next(error);
+    }
+  };
+
 }
 
 module.exports = CommentsDao;
